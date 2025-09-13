@@ -42,12 +42,14 @@ const MovieCard: React.FC<MovieCardProps> = ({
     <Link to={`/movies/${movie.id}`}>
       <Card className={cn(
         "movie-card overflow-hidden group cursor-pointer card-gradient",
-        variant === 'large' && "md:flex md:max-w-2xl",
+        variant === 'large' && "flex flex-col sm:flex-row w-full",
         className
       )}>
         <div className={cn(
-          "relative overflow-hidden",
-          variant === 'large' ? "md:w-1/3" : "aspect-[2/3]"
+          "relative overflow-hidden flex-shrink-0",
+          variant === 'large' 
+            ? "w-full sm:w-48 h-48 sm:h-auto sm:aspect-[2/3]" 
+            : "aspect-[2/3]"
         )}>
           <img
             src={movie.poster}
@@ -63,7 +65,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 className="w-full bg-cinema-gold/90 hover:bg-cinema-gold text-cinema-darker font-semibold"
               >
                 <Play className="mr-2 h-4 w-4" />
-                Watch Trailer
+                {variant === 'large' ? 'View Details' : 'Watch Trailer'}
               </Button>
             </div>
           </div>
@@ -74,7 +76,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
               size="icon"
               variant="ghost"
               className={cn(
-                "absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-all duration-200",
+                "absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-background/20 backdrop-blur-sm",
                 isInWatchlist && "opacity-100"
               )}
               onClick={toggleWatchlist}
@@ -90,29 +92,35 @@ const MovieCard: React.FC<MovieCardProps> = ({
         </div>
 
         <div className={cn(
-          "p-4",
-          variant === 'large' && "md:w-2/3 md:flex md:flex-col md:justify-between"
+          "p-4 flex-1",
+          variant === 'large' && "flex flex-col justify-between"
         )}>
-          <div>
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-bold text-lg text-foreground group-hover:text-cinema-gold transition-colors line-clamp-2">
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-lg text-foreground group-hover:text-cinema-gold transition-colors line-clamp-2 mb-2">
                 {movie.title}
               </h3>
+              
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{movie.year}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Clock className="h-4 w-4" />
+                  <span>{movie.duration}m</span>
+                </div>
+                {variant === 'large' && (
+                  <span className="text-muted-foreground">•</span>
+                )}
+                {variant === 'large' && (
+                  <span className="text-muted-foreground">{movie.director}</span>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center space-x-4 mb-3 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-4 w-4" />
-                <span>{movie.year}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>{movie.duration}m</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1 mb-3">
-              {movie.genre.slice(0, 2).map((genre) => (
+            <div className="flex flex-wrap gap-1">
+              {movie.genre.slice(0, variant === 'large' ? 4 : 2).map((genre) => (
                 <Badge 
                   key={genre} 
                   variant="secondary"
@@ -124,17 +132,27 @@ const MovieCard: React.FC<MovieCardProps> = ({
             </div>
 
             {variant === 'large' && (
-              <p className="text-muted-foreground text-sm line-clamp-3 mb-4">
+              <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed">
                 {movie.synopsis}
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className={cn(
+            "flex items-center justify-between",
+            variant === 'large' ? "pt-4 mt-auto" : "pt-2"
+          )}>
             <StarRating rating={movie.avgRating} size="sm" />
-            <div className="text-sm text-muted-foreground">
-              {movie.director}
-            </div>
+            {variant === 'large' && (
+              <div className="text-xs text-muted-foreground">
+                {state.reviews.filter(r => r.movieId === movie.id).length} reviews
+              </div>
+            )}
+            {variant === 'default' && (
+              <div className="text-sm text-muted-foreground truncate max-w-20">
+                {movie.director}
+              </div>
+            )}
           </div>
         </div>
       </Card>

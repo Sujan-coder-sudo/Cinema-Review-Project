@@ -1,15 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Filter, SortAsc, Grid, List } from 'lucide-react';
+import { Grid, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -18,18 +9,31 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import MovieCard from '@/components/MovieCard';
+import FilterSidebar from '@/components/FilterSidebar';
 import { useApp } from '@/contexts/AppContext';
-import { genres } from '@/lib/mockData';
 
 const Movies = () => {
-  const { state, dispatch } = useApp();
+  const { state } = useApp();
   const [sortBy, setSortBy] = useState('rating');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [yearRange, setYearRange] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  const moviesPerPage = 12;
 
   // Filter and sort movies
-  const filteredMovies = useMemo(() => {
+  const { filteredMovies, totalPages, paginatedMovies } = useMemo(() => {
     let filtered = state.movies;
 
     // Filter by search query
@@ -75,184 +79,103 @@ const Movies = () => {
     // Sort movies
     switch (sortBy) {
       case 'rating':
-        return filtered.sort((a, b) => b.avgRating - a.avgRating);
+        filtered = filtered.sort((a, b) => b.avgRating - a.avgRating);
+        break;
       case 'year':
-        return filtered.sort((a, b) => b.year - a.year);
+        filtered = filtered.sort((a, b) => b.year - a.year);
+        break;
       case 'title':
-        return filtered.sort((a, b) => a.title.localeCompare(b.title));
+        filtered = filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
       case 'duration':
-        return filtered.sort((a, b) => b.duration - a.duration);
-      default:
-        return filtered;
+        filtered = filtered.sort((a, b) => b.duration - a.duration);
+        break;
     }
-  }, [state.movies, state.searchQuery, state.selectedGenres, sortBy, yearRange]);
 
-  const clearFilters = () => {
-    dispatch({ type: 'SET_SEARCH_QUERY', payload: '' });
-    dispatch({ type: 'SET_SELECTED_GENRES', payload: [] });
-    setYearRange('all');
-    setSortBy('rating');
-  };
+    // Pagination
+    const totalPages = Math.ceil(filtered.length / moviesPerPage);
+    const startIndex = (currentPage - 1) * moviesPerPage;
+    const paginatedMovies = filtered.slice(startIndex, startIndex + moviesPerPage);
 
-  const activeFiltersCount = state.selectedGenres.length + 
-    (yearRange !== 'all' ? 1 : 0) + 
-    (state.searchQuery ? 1 : 0);
+    return {
+      filteredMovies: filtered,
+      totalPages,
+      paginatedMovies
+    };
+  }, [state.movies, state.searchQuery, state.selectedGenres, sortBy, yearRange, currentPage, moviesPerPage]);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [state.searchQuery, state.selectedGenres, yearRange, sortBy]);
+
 
   return (
-    <div className="min-h-screen pt-8 pb-16">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Discover Movies
-          </h1>
-          <p className="text-muted-foreground">
-            Explore our collection of {state.movies.length} movies
-          </p>
-        </div>
-
-        {/* Filters and Controls */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-8">
-          {/* Desktop Filters */}
-          <div className="hidden lg:block w-80 space-y-6">
-            <div className="card-gradient p-6 rounded-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-foreground">Filters</h3>
-                {activeFiltersCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="text-cinema-gold hover:text-cinema-gold/80"
-                  >
-                    Clear All
-                  </Button>
-                )}
-              </div>
-
-              {/* Genres */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Genres</h4>
-                <div className="flex flex-wrap gap-2">
-                  {genres.map((genre) => (
-                    <Badge
-                      key={genre}
-                      variant={state.selectedGenres.includes(genre) ? "default" : "outline"}
-                      className={`cursor-pointer transition-all ${
-                        state.selectedGenres.includes(genre)
-                          ? "bg-cinema-gold text-cinema-darker"
-                          : "border-cinema-purple/30 hover:border-cinema-gold"
-                      }`}
-                      onClick={() => dispatch({ type: 'TOGGLE_GENRE', payload: genre })}
-                    >
-                      {genre}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Year Range */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Release Year</h4>
-                <Select value={yearRange} onValueChange={setYearRange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Years" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Years</SelectItem>
-                    <SelectItem value="recent">Recent (2021+)</SelectItem>
-                    <SelectItem value="2010s">2010s</SelectItem>
-                    <SelectItem value="2000s">2000s</SelectItem>
-                    <SelectItem value="classic">Classic (Pre-2000)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+    <div className="min-h-screen">
+      <div className="flex">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:block w-80 min-h-screen bg-secondary/20 border-r border-cinema-purple/20">
+          <div className="sticky top-20 p-6 max-h-[calc(100vh-5rem)] overflow-y-auto">
+            <FilterSidebar
+              yearRange={yearRange}
+              setYearRange={setYearRange}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+            />
           </div>
+        </aside>
 
-          {/* Main Content */}
-          <div className="flex-1">
+        {/* Main Content */}
+        <main className="flex-1 min-h-screen">
+          <div className="container mx-auto px-4 py-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-foreground mb-4">
+                Discover Movies
+              </h1>
+              <p className="text-muted-foreground">
+                Explore our collection of {state.movies.length} movies
+              </p>
+            </div>
+
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div className="flex items-center gap-4">
                 {/* Mobile Filter Button */}
-                <Sheet>
+                <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
                   <SheetTrigger asChild>
                     <Button variant="outline" className="lg:hidden">
-                      <Filter className="h-4 w-4 mr-2" />
                       Filters
-                      {activeFiltersCount > 0 && (
-                        <Badge className="ml-2 bg-cinema-gold text-cinema-darker">
-                          {activeFiltersCount}
-                        </Badge>
-                      )}
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-80">
+                  <SheetContent side="left" className="w-80 overflow-y-auto">
                     <SheetHeader>
-                      <SheetTitle>Filters</SheetTitle>
+                      <SheetTitle>Filter Movies</SheetTitle>
                       <SheetDescription>
-                        Filter movies by genre, year, and more
+                        Refine your movie search with filters
                       </SheetDescription>
                     </SheetHeader>
-                    <div className="mt-6 space-y-6">
-                      {/* Same filter content as desktop */}
-                      <div>
-                        <h4 className="font-medium mb-3">Genres</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {genres.map((genre) => (
-                            <Badge
-                              key={genre}
-                              variant={state.selectedGenres.includes(genre) ? "default" : "outline"}
-                              className={`cursor-pointer transition-all ${
-                                state.selectedGenres.includes(genre)
-                                  ? "bg-cinema-gold text-cinema-darker"
-                                  : "border-cinema-purple/30 hover:border-cinema-gold"
-                              }`}
-                              onClick={() => dispatch({ type: 'TOGGLE_GENRE', payload: genre })}
-                            >
-                              {genre}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-3">Release Year</h4>
-                        <Select value={yearRange} onValueChange={setYearRange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All Years" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Years</SelectItem>
-                            <SelectItem value="recent">Recent (2021+)</SelectItem>
-                            <SelectItem value="2010s">2010s</SelectItem>
-                            <SelectItem value="2000s">2000s</SelectItem>
-                            <SelectItem value="classic">Classic (Pre-2000)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="mt-6">
+                      <FilterSidebar
+                        yearRange={yearRange}
+                        setYearRange={setYearRange}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        onClose={() => setShowMobileFilters(false)}
+                      />
                     </div>
                   </SheetContent>
                 </Sheet>
 
-                {/* Sort */}
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[180px]">
-                    <SortAsc className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rating">Highest Rated</SelectItem>
-                    <SelectItem value="year">Newest First</SelectItem>
-                    <SelectItem value="title">A-Z</SelectItem>
-                    <SelectItem value="duration">Longest First</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  Showing {paginatedMovies.length} of {filteredMovies.length} movies
+                </div>
               </div>
 
+              {/* View Mode Toggle */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {filteredMovies.length} movies
+                <span className="text-sm text-muted-foreground hidden sm:inline">
+                  View:
                 </span>
                 <div className="flex border border-border rounded-lg">
                   <Button
@@ -276,30 +199,86 @@ const Movies = () => {
             </div>
 
             {/* Movies Grid */}
-            {filteredMovies.length > 0 ? (
-              <div className={`grid gap-6 ${
-                viewMode === 'grid' 
-                  ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' 
-                  : 'grid-cols-1'
-              }`}>
-                {filteredMovies.map((movie) => (
-                  <MovieCard 
-                    key={movie.id} 
-                    movie={movie} 
-                    variant={viewMode === 'list' ? 'large' : 'default'}
-                  />
-                ))}
-              </div>
+            {paginatedMovies.length > 0 ? (
+              <>
+                <div className={`grid gap-6 mb-8 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' 
+                    : 'grid-cols-1'
+                }`}>
+                  {paginatedMovies.map((movie) => (
+                    <MovieCard 
+                      key={movie.id} 
+                      movie={movie} 
+                      variant={viewMode === 'list' ? 'large' : 'default'}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination className="justify-center">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        } else if (
+                          page === currentPage - 2 ||
+                          page === currentPage + 2
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </>
             ) : (
               <div className="text-center py-16">
                 <div className="text-muted-foreground mb-4">No movies found</div>
-                <Button onClick={clearFilters} variant="outline">
+                <Button onClick={() => {
+                  setYearRange('all');
+                  setSortBy('rating');
+                }} variant="outline">
                   Clear Filters
                 </Button>
               </div>
             )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
