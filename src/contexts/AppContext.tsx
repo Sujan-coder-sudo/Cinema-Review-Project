@@ -117,16 +117,20 @@ export const useAuth = () => {
   const { state, dispatch } = useApp();
 
   const login = (email: string, password: string) => {
-    // Mock login - in real app, this would call an API
-    if (email === 'cinema@example.com' && password === 'password') {
-      dispatch({ type: 'LOGIN', payload: mockUser });
-      return true;
-    }
-    return false;
+    // Create a user object from the email (in a real app, you might fetch user details from API)
+    const user: User = {
+      id: Date.now().toString(),
+      username: email.split('@')[0], // Use email prefix as username
+      email,
+      joinDate: new Date().toISOString(),
+      watchlist: []
+    };
+    dispatch({ type: 'LOGIN', payload: user });
+    return true;
   };
 
   const register = (username: string, email: string, password: string) => {
-    // Mock registration
+    // Create a new user object
     const newUser: User = {
       id: Date.now().toString(),
       username,
@@ -139,7 +143,30 @@ export const useAuth = () => {
   };
 
   const logout = () => {
+    // Remove JWT token from localStorage
+    localStorage.removeItem('authToken');
     dispatch({ type: 'LOGOUT' });
+  };
+
+  // Check if user is authenticated on app load
+  const checkAuthStatus = () => {
+    const token = localStorage.getItem('authToken');
+    if (token && !state.isAuthenticated) {
+      // You might want to verify the token with the backend here
+      // For now, we'll assume the token is valid
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // Could decode JWT token to get user info, but for simplicity, 
+      // we'll create a placeholder user
+      const user: User = {
+        id: 'authenticated',
+        username: 'User',
+        email: 'user@example.com',
+        joinDate: new Date().toISOString(),
+        watchlist: []
+      };
+      dispatch({ type: 'LOGIN', payload: user });
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
   return {
@@ -147,6 +174,7 @@ export const useAuth = () => {
     isAuthenticated: state.isAuthenticated,
     login,
     register,
-    logout
+    logout,
+    checkAuthStatus
   };
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, Film } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Film, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -8,6 +8,23 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+
+// API configuration
+const API_BASE_URL = 'http://localhost:5000/api/auth';
+
+// Types for API responses
+interface LoginResponse {
+  token: string;
+}
+
+interface RegisterResponse {
+  message: string;
+  token: string;
+}
+
+interface ApiError {
+  error: string;
+}
 
 const Auth = () => {
   const location = useLocation();
@@ -17,6 +34,7 @@ const Auth = () => {
   
   const isLogin = location.pathname === '/login';
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -32,42 +50,113 @@ const Auth = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isLogin) {
-      const success = login(formData.email, formData.password);
-      if (success) {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-        navigate('/');
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid email or password. Try: cinema@example.com / password",
-          variant: "destructive",
-        });
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error((data as ApiError).error || 'Login failed');
       }
-    } else {
-      if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: "Password mismatch",
-          description: "Passwords do not match.",
-          variant: "destructive",
-        });
-        return;
-      }
+
+      const { token } = data as LoginResponse;
       
-      const success = register(formData.username, formData.email, formData.password);
-      if (success) {
-        toast({
-          title: "Account created!",
-          description: "Welcome to CinemaReview!",
-        });
-        navigate('/');
+      // Store JWT token in localStorage
+      localStorage.setItem('authToken', token);
+      
+      // Update app context with successful login
+      login(email, password);
+      
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Invalid email or password",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const handleRegister = async (username: string, email: string, password: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error((data as ApiError).error || 'Registration failed');
       }
+
+      const { token } = data as RegisterResponse;
+      
+      // Store JWT token in localStorage
+      localStorage.setItem('authToken', token);
+      
+      // Update app context with successful registration
+      register(username, email, password);
+      
+      toast({
+        title: "Account created!",
+        description: "Welcome to CinemaReview!",
+      });
+      
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Failed to create account",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        await handleLogin(formData.email, formData.password);
+      } else {
+        if (formData.password !== formData.confirmPassword) {
+          toast({
+            title: "Password mismatch",
+            description: "Passwords do not match.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        await handleRegister(formData.username, formData.email, formData.password);
+      }
+    } catch (error) {
+      // Error handling is done in the respective functions
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,16 +187,6 @@ const Auth = () => {
             </p>
           </div>
 
-          {/* Demo Credentials */}
-          {isLogin && (
-            <div className="bg-cinema-purple/10 border border-cinema-purple/20 rounded-lg p-4 mb-6">
-              <p className="text-sm text-cinema-purple-light font-medium mb-2">Demo Credentials:</p>
-              <p className="text-xs text-muted-foreground">
-                Email: cinema@example.com<br />
-                Password: password
-              </p>
-            </div>
-          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -199,8 +278,16 @@ const Auth = () => {
             <Button 
               type="submit" 
               className="w-full btn-gold text-lg py-6"
+              disabled={loading}
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isLogin ? 'Signing In...' : 'Creating Account...'}
+                </>
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
             </Button>
           </form>
 

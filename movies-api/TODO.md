@@ -1,0 +1,8 @@
+- [x] Create User model (models/User.js)
+- [x] Create auth routes (routes/auth.js) with register and login
+- [x] Update movies routes (routes/movies.js) to add /favorite and /favorites using TMDb API
+- [x] Update server.js to add CORS, auth routes, and updated movies routes
+- [x] Update package.json to add bcrypt and axios dependencies
+- [x] Update .env to add TMDB_TOKEN and TMDB_ACCOUNT_ID
+- [x] Install new dependencies
+- [x] Test the new endpoints (requires real MONGO_URI, TMDB_TOKEN, TMDB_ACCOUNT_ID in .env)
