@@ -169,6 +169,7 @@ export interface UsePaginatedMoviesState {
   error: string | null;
   hasMore: boolean;
   loadMore: () => void;
+  goToPage: (page: number) => void;
   refresh: () => void;
   totalPages: number;
   currentPage: number;
@@ -180,6 +181,7 @@ export function usePaginatedMovies(
   options: {
     immediate?: boolean;
     onError?: (error: any) => void;
+    resetKey?: string | number;
   } = {}
 ): UsePaginatedMoviesState {
   const [movies, setMovies] = useState<TMDBMovie[]>([]);
@@ -191,7 +193,7 @@ export function usePaginatedMovies(
   const [hasMore, setHasMore] = useState(true);
   const { toast } = useToast();
 
-  const { immediate = true, onError } = options;
+  const { immediate = true, onError, resetKey } = options;
 
   const loadPage = useCallback(async (page: number, append: boolean = false) => {
     setLoading(true);
@@ -199,13 +201,17 @@ export function usePaginatedMovies(
 
     try {
       const result = await apiCall(page);
-      
-      if (append) {
-        setMovies(prev => [...prev, ...result.results]);
-      } else {
-        setMovies(result.results);
-      }
-      
+
+      setMovies(prev => {
+        const combined = append ? [...prev, ...result.results] : result.results;
+        const seen = new Set<number>();
+        return combined.filter(m => {
+          if (seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
+      });
+
       setCurrentPage(result.page);
       setTotalPages(result.total_pages);
       setTotalResults(result.total_results);
@@ -233,9 +239,15 @@ export function usePaginatedMovies(
 
   const refresh = useCallback(() => {
     setMovies([]);
-    setCurrentPage(1);
+    setCurrentPage(0);
     setHasMore(true);
     loadPage(1, false);
+  }, [loadPage]);
+
+  const goToPage = useCallback((page: number) => {
+    // This function is now a simple command to fetch a page.
+    // The component will manage the page state and UI updates.
+    loadPage(page, false);
   }, [loadPage]);
 
   useEffect(() => {
@@ -244,12 +256,23 @@ export function usePaginatedMovies(
     }
   }, [immediate, loadPage]);
 
+  // Reset and reload when resetKey changes (e.g., filters changed)
+  useEffect(() => {
+    if (resetKey !== undefined) {
+      setMovies([]);
+      setCurrentPage(0);
+      setHasMore(true);
+      loadPage(1, false);
+    }
+  }, [resetKey, loadPage]);
+
   return {
     movies,
     loading,
     error,
     hasMore,
     loadMore,
+    goToPage,
     refresh,
     totalPages,
     currentPage,
@@ -290,16 +313,19 @@ export function usePaginatedGenreMovies(genreId: number) {
 
 // Hook for paginated discover movies with filters
 export function usePaginatedDiscoverMovies(params: {
-  page?: number;
   genre?: number;
   year?: number;
   sortBy?: string;
   voteAverage?: number;
   voteCount?: number;
+  query?: string;
 } = {}) {
+  const { genre, year, sortBy, voteAverage, voteCount, query } = params || {};
+  const resetKey = JSON.stringify({ genre, year, sortBy, voteAverage, voteCount, query });
+
   return usePaginatedMovies(
     (page) => tmdbClient.discoverMovies({ ...params, page }),
-    { immediate: true }
+    { immediate: false, resetKey }
   );
 }
 

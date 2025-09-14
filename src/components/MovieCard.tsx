@@ -13,12 +13,16 @@ interface MovieCardProps {
   movie: Movie;
   variant?: 'default' | 'large' | 'grid' | 'list';
   className?: string;
+  disableLink?: boolean;
+  onSelect?: (movie: Movie) => void;
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ 
   movie, 
   variant = 'default',
-  className 
+  className,
+  disableLink = false,
+  onSelect,
 }) => {
   const { state, dispatch } = useApp();
   const { user } = useAuth();
@@ -38,8 +42,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
     }
   };
 
-  return (
-    <Link to={`/movies/${movie.id}`}>
+  const CardInner = (
       <Card className={cn(
         "movie-card overflow-hidden group cursor-pointer card-gradient",
         variant === 'large' && "flex flex-col sm:flex-row w-full",
@@ -153,6 +156,23 @@ const MovieCard: React.FC<MovieCardProps> = ({
           </div>
         </div>
       </Card>
+  );
+
+  if (disableLink || onSelect) {
+    return (
+      <div
+        role="button"
+        onClick={() => onSelect?.(movie)}
+        className="focus:outline-none"
+      >
+        {CardInner}
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/movies/${movie.id}`}>
+      {CardInner}
     </Link>
   );
 };

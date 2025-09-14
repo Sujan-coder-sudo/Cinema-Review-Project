@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search, Filter, Grid, List, SlidersHorizontal, SortAsc } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Search, Filter, Grid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
+// Removed Sheet components as mobile filter button was removed
 import { useToast } from '@/hooks/use-toast';
-import TMDBMovieCard, { TMDBMovieGrid, TMDBMovieGridSkeleton } from '@/components/TMDBMovieCard';
-import { useDiscoverMovies, useMovieGenres, usePaginatedDiscoverMovies } from '@/hooks/useTMDB';
+import TMDBMovieCard, { TMDBMovieGridSkeleton } from '@/components/TMDBMovieCard';
+import { useMovieGenres, usePaginatedDiscoverMovies } from '@/hooks/useTMDB';
 
 interface FilterState {
   query: string;
@@ -18,99 +17,119 @@ interface FilterState {
   year: string;
   sortBy: string;
   voteAverage: string;
-  page: number;
 }
 
 const TMDBMovies: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filters, setFilters] = useState<FilterState>({
+
+  // == Single Source of Truth: Derive all state from URL search params ==
+  const currentPageFromUrl = parseInt(searchParams.get('page') || '1', 10);
+  const filtersFromUrl = useMemo(() => ({
     query: searchParams.get('query') || '',
     genre: searchParams.get('genre') || '',
     year: searchParams.get('year') || '',
     sortBy: searchParams.get('sortBy') || 'popularity.desc',
     voteAverage: searchParams.get('voteAverage') || '',
-    page: 1,
-  });
+  }), [searchParams]);
 
-  // Fetch genres
+  // Local UI state for controlled inputs like the search bar
+  const [searchInput, setSearchInput] = useState(filtersFromUrl.query);
+
+  // Genres
   const { data: genresData } = useMovieGenres();
   const genres = genresData?.genres || [];
 
-  // Debounced search
-  const [searchInput, setSearchInput] = useState(filters.query);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchInput !== filters.query) {
-        setFilters(prev => ({ ...prev, query: searchInput, page: 1 }));
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchInput, filters.query]);
+  // == Handlers: These functions only modify the URL search params ==
+  const handleGoTo = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', String(page));
+    setSearchParams(params, { replace: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Update URL when filters change
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (filters.query) params.set('query', filters.query);
-    if (filters.genre) params.set('genre', filters.genre);
-    if (filters.year) params.set('year', filters.year);
-    if (filters.sortBy !== 'popularity.desc') params.set('sortBy', filters.sortBy);
-    if (filters.voteAverage) params.set('voteAverage', filters.voteAverage);
-    if (filters.page > 1) params.set('page', filters.page.toString());
-    
-    setSearchParams(params);
-  }, [filters, setSearchParams]);
-
-  // Prepare API params
-  const apiParams = useMemo(() => ({
-    page: filters.page,
-    genre: filters.genre ? parseInt(filters.genre) : undefined,
-    year: filters.year ? parseInt(filters.year) : undefined,
-    sortBy: filters.sortBy,
-    voteAverage: filters.voteAverage ? parseFloat(filters.voteAverage) : undefined,
-  }), [filters]);
-
-  // Fetch movies with filters
-  const { 
-    movies, 
-    loading, 
-    error, 
-    hasMore, 
-    loadMore, 
-    refresh, 
-    totalPages, 
-    currentPage,
-    totalResults 
-  } = usePaginatedDiscoverMovies(apiParams);
-
-  // Handle filter changes
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  const updateFilter = (key: keyof FilterState, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.set('page', '1'); // Reset page when any filter changes
+    setSearchParams(params, { replace: true });
   };
 
   const clearFilters = () => {
-    setFilters({
-      query: '',
-      genre: '',
-      year: '',
-      sortBy: 'popularity.desc',
-      voteAverage: '',
-      page: 1,
-    });
+    const params = new URLSearchParams();
+    // Preserve sortBy unless you want it to reset too
+    params.set('sortBy', searchParams.get('sortBy') || 'popularity.desc');
+    setSearchParams(params, { replace: true });
     setSearchInput('');
   };
 
-  // Get active filters count
+  // Debounce search input to avoid excessive updates
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      updateFilter('query', searchInput);
+    }, 400);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  // == Data Fetching: The hook is called with params derived from the URL ==
+  const apiParams = useMemo(() => ({
+    genre: filtersFromUrl.genre ? parseInt(filtersFromUrl.genre, 10) : undefined,
+    year: filtersFromUrl.year ? parseInt(filtersFromUrl.year, 10) : undefined,
+    sortBy: filtersFromUrl.sortBy,
+    voteAverage: filtersFromUrl.voteAverage ? parseFloat(filtersFromUrl.voteAverage) : undefined,
+    query: filtersFromUrl.query || undefined,
+  }), [filtersFromUrl]);
+
+  const {
+    movies,
+    loading,
+    error,
+    goToPage,
+    totalPages,
+    currentPage,
+    totalResults
+  } = usePaginatedDiscoverMovies(apiParams);
+
+  // This is the primary effect that syncs the URL state to the data fetching hook
+  useEffect(() => {
+    goToPage(currentPageFromUrl);
+  }, [currentPageFromUrl, apiParams, goToPage]);
+
+  // Error toast
+  useEffect(() => {
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to load movies. Try again later.', variant: 'destructive' });
+    }
+  }, [error, toast]);
+
+  // == UI Helpers ==
+  const paginationPages = useMemo(() => {
+    const pages: number[] = [];
+    const maxToShow = 7;
+    if (!totalPages || totalPages <= 1) return [];
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxToShow - 1);
+    start = Math.max(1, Math.min(start, end - maxToShow + 1));
+    for (let p = start; p <= end; p++) pages.push(p);
+    return pages;
+  }, [currentPage, totalPages]);
+
+  // UI helpers
   const activeFiltersCount = [
-    filters.query,
-    filters.genre,
-    filters.year,
-    filters.sortBy !== 'popularity.desc' ? filters.sortBy : '',
-    filters.voteAverage,
+    filtersFromUrl.query,
+    filtersFromUrl.genre,
+    filtersFromUrl.year,
+    filtersFromUrl.sortBy !== 'popularity.desc' ? filtersFromUrl.sortBy : '',
+    filtersFromUrl.voteAverage
   ].filter(Boolean).length;
 
-  // Generate year options (current year back to 1920)
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: currentYear - 1919 }, (_, i) => currentYear - i);
 
@@ -124,39 +143,29 @@ const TMDBMovies: React.FC = () => {
     { value: 'revenue.desc', label: 'Highest Revenue' },
   ];
 
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to load movies. Please try again.",
-      variant: "destructive",
-    });
-  }
-
   return (
-    <div className="min-h-screen pt-8 pb-16">
+    <div className="min-h-screen pt-8 pb-16 bg-surface-50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Discover Movies</h1>
-          <p className="text-muted-foreground text-lg">
-            Explore our vast collection of movies from around the world
-          </p>
+          <p className="text-muted-foreground text-lg">Explore our vast collection of movies from around the world</p>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="xl:w-80 flex-shrink-0">
+        {/* TWO COLUMN LAYOUT: LEFT FILTERS, RIGHT MOVIES (from small screens up) */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-8">
+          {/* LEFT: filters (sticky across breakpoints) */}
+          <aside className="sm:col-span-4 lg:col-span-3">
             <Card className="card-gradient p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  <SlidersHorizontal className="h-5 w-5 text-cinema-gold" />
+                  {/* Using Filter icon here for title */}
+                  <Filter className="h-5 w-5 text-cinema-gold" />
                   Filters
                 </h2>
-                {activeFiltersCount > 0 && (
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Clear All
-                  </Button>
-                )}
+                {activeFiltersCount > 0 ? (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>Clear</Button>
+                ) : <div style={{ width: 48 }} />}
               </div>
 
               <div className="space-y-6">
@@ -166,6 +175,7 @@ const TMDBMovies: React.FC = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
+                      aria-label="Search movies"
                       placeholder="Search by title..."
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
@@ -174,237 +184,172 @@ const TMDBMovies: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Genre Filter */}
+                {/* Genre */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Genre</label>
-                  <Select value={filters.genre || "all"} onValueChange={(value) => handleFilterChange('genre', value === "all" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Genres" />
-                    </SelectTrigger>
+                  <Select value={filtersFromUrl.genre || 'all'} onValueChange={(v) => updateFilter('genre', v === 'all' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="All Genres" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Genres</SelectItem>
-                      {genres.map((genre) => (
-                        <SelectItem key={genre.id} value={genre.id.toString()}>
-                          {genre.name}
-                        </SelectItem>
-                      ))}
+                      {genres.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Year Filter */}
+                {/* Year */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Release Year</label>
-                  <Select value={filters.year || "any"} onValueChange={(value) => handleFilterChange('year', value === "any" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any Year" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <Select value={filtersFromUrl.year || 'any'} onValueChange={(v) => updateFilter('year', v === 'any' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="Any Year" /></SelectTrigger>
+                    <SelectContent style={{ maxHeight: 320, overflow: 'auto' }}>
                       <SelectItem value="any">Any Year</SelectItem>
-                      {yearOptions.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
+                      {yearOptions.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Rating Filter */}
+                {/* Rating */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Minimum Rating</label>
-                  <Select value={filters.voteAverage || "any"} onValueChange={(value) => handleFilterChange('voteAverage', value === "any" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any Rating" />
-                    </SelectTrigger>
+                  <Select value={filtersFromUrl.voteAverage || 'any'} onValueChange={(v) => updateFilter('voteAverage', v === 'any' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="Any Rating" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any Rating</SelectItem>
                       <SelectItem value="8">8+ Stars</SelectItem>
                       <SelectItem value="7">7+ Stars</SelectItem>
                       <SelectItem value="6">6+ Stars</SelectItem>
                       <SelectItem value="5">5+ Stars</SelectItem>
-                      <SelectItem value="4">4+ Stars</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Active Filters */}
+                {/* active badges */}
                 {activeFiltersCount > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Active Filters</label>
-                    <div className="flex flex-wrap gap-2">
-                      {filters.query && (
-                        <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">
-                          Search: {filters.query}
-                        </Badge>
-                      )}
-                      {filters.genre && (
-                        <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">
-                          {genres.find(g => g.id.toString() === filters.genre)?.name}
-                        </Badge>
-                      )}
-                      {filters.year && (
-                        <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">
-                          {filters.year}
-                        </Badge>
-                      )}
-                      {filters.voteAverage && (
-                        <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">
-                          {filters.voteAverage}+ Stars
-                        </Badge>
-                      )}
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Active Filters</label>
+                      <div className="flex flex-wrap gap-2">
+                        {filtersFromUrl.query && <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">Search: {filtersFromUrl.query}</Badge>}
+                        {filtersFromUrl.genre && <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">{genres.find(g => g.id.toString() === filtersFromUrl.genre)?.name}</Badge>}
+                        {filtersFromUrl.year && <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">{filtersFromUrl.year}</Badge>}
+                        {filtersFromUrl.voteAverage && <Badge variant="secondary" className="bg-cinema-gold/20 text-cinema-gold">{filtersFromUrl.voteAverage}+ Stars</Badge>}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </Card>
           </aside>
 
-          {/* Main Content */}
-          <main className="flex-1">
-            {/* Top Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              {/* Results Info */}
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold mb-1">Discover Movies</h2>
-                <p className="text-muted-foreground">
-                  {loading ? 'Loading...' : `${totalResults.toLocaleString()} movies found`}
-                </p>
+          {/* RIGHT: movies area */}
+          <main className="sm:col-span-8 lg:col-span-9">
+            {/* top controls */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">Results</h2>
+                <p className="text-muted-foreground">{loading && movies.length === 0 ? 'Loading...' : `${totalResults?.toLocaleString() || 0} movies found`}</p>
               </div>
 
-              {/* Sort */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
-                <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
+              <div className="flex items-center gap-3">
+                <Select value={filtersFromUrl.sortBy} onValueChange={(v) => updateFilter('sortBy', v)}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Sort by..." /></SelectTrigger>
                   <SelectContent>
-                    {sortOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    {sortOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
-              </div>
 
-              {/* Mobile Filters */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="xl:hidden">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                    {activeFiltersCount > 0 && (
-                      <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 text-xs">
-                        {activeFiltersCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80">
-                  <SheetHeader>
-                    <SheetTitle>Filters</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6 space-y-6">
-                    {/* Mobile filter content would go here - same as sidebar */}
-                  </div>
-                </SheetContent>
-              </Sheet>
+                <div className="flex items-center gap-2">
+                  <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('grid')} aria-label="Grid view"><Grid className="h-4 w-4" /></Button>
+                  <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('list')} aria-label="List view"><List className="h-4 w-4" /></Button>
+                </div>
+              </div>
             </div>
 
-            {/* Movies Grid */}
-            {loading && currentPage === 1 ? (
-              <TMDBMovieGridSkeleton 
-                count={12} 
-                variant={viewMode === 'list' ? 'large' : 'default'} 
-              />
-            ) : movies.length > 0 ? (
+            {/* movie grid/list or skeleton */}
+            {loading && movies.length === 0 ? (
+              <TMDBMovieGridSkeleton count={12} variant={viewMode === 'list' ? 'large' : 'default'} />
+            ) : movies && movies.length > 0 ? (
               <>
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {movies.length} of {totalResults.toLocaleString()} movies
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">View:</span>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant={viewMode === 'grid' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setViewMode('grid')}
-                        >
-                          <Grid className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant={viewMode === 'list' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setViewMode('list')}
-                        >
-                          <List className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6' : 'grid grid-cols-1 gap-6'}>
+                  {movies.map(movie => (
+                    <Link key={movie.id} to={`/movies/${movie.id}`} className="group">
+                      <TMDBMovieCard movie={movie} variant={viewMode === 'list' ? 'large' : 'default'} />
+                    </Link>
+                  ))}
                 </div>
 
-                <TMDBMovieGrid 
-                  movies={movies} 
-                  variant={viewMode === 'list' ? 'large' : 'default'}
-                  className="mb-8"
-                />
-
-                {/* Load More Button */}
-                {hasMore && (
-                  <div className="text-center py-8">
+                {/* Pagination controls */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
                     <Button
-                      onClick={loadMore}
-                      disabled={loading}
                       variant="outline"
-                      size="lg"
-                      className="btn-outline min-w-48"
+                      size="sm"
+                      onClick={() => handleGoTo(1)}
+                      disabled={currentPage <= 1}
                     >
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-cinema-gold border-t-transparent rounded-full animate-spin" />
-                          Loading...
-                        </div>
-                      ) : (
-                        'Load More Movies'
-                      )}
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGoTo(currentPage - 1)}
+                      disabled={currentPage <= 1}
+                    >
+                      Prev
+                    </Button>
+
+                    {/* Leading ellipsis */}
+                    {paginationPages.length > 0 && paginationPages[0] > 1 && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => handleGoTo(1)}>1</Button>
+                        {paginationPages[0] > 2 && <span className="px-1 text-muted-foreground">…</span>}
+                      </>
+                    )}
+
+                    {paginationPages.map(p => (
+                      <Button
+                        key={p}
+                        variant={p === currentPage ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleGoTo(p)}
+                      >
+                        {p}
+                      </Button>
+                    ))}
+
+                    {/* Trailing ellipsis */}
+                    {paginationPages.length > 0 && paginationPages[paginationPages.length - 1] < totalPages && (
+                      <>
+                        {paginationPages[paginationPages.length - 1] < totalPages - 1 && (
+                          <span className="px-1 text-muted-foreground">…</span>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => handleGoTo(totalPages)}>{totalPages}</Button>
+                      </>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGoTo(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGoTo(totalPages)}
+                      disabled={currentPage >= totalPages}
+                    >
+                      Last
                     </Button>
                   </div>
                 )}
-
-                {/* Pagination Info */}
-                <div className="text-center mt-8 text-muted-foreground border-t pt-6">
-                  <div className="flex items-center justify-center gap-4 text-sm">
-                    <span>Page {currentPage} of {totalPages}</span>
-                    <span>•</span>
-                    <span>{totalResults.toLocaleString()} total movies</span>
-                    {activeFiltersCount > 0 && (
-                      <>
-                        <span>•</span>
-                        <span>{activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} applied</span>
-                      </>
-                    )}
-                  </div>
-                </div>
               </>
             ) : (
               <Card className="card-gradient p-12 text-center">
-                <div className="max-w-md mx-auto">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-                    <Search className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No movies found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try adjusting your filters or search terms to find more movies.
-                  </p>
-                  <Button onClick={clearFilters} variant="outline">
-                    Clear All Filters
-                  </Button>
-                </div>
+                <h3 className="text-xl font-semibold mb-2">No movies found</h3>
+                <Button onClick={clearFilters} variant="outline">Clear All Filters</Button>
               </Card>
             )}
           </main>

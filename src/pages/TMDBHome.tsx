@@ -7,10 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import TMDBMovieCard, { TMDBMovieGrid, TMDBMovieGridSkeleton } from '@/components/TMDBMovieCard';
 import { usePopularMovies, useTrendingMovies, useTopRatedMovies, useMovieGenres } from '@/hooks/useTMDB';
-import { tmdbClient, formatReleaseYear } from '@/lib/tmdb';
+import { tmdbClient, formatReleaseYear, TMDBMovie } from '@/lib/tmdb';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const TMDBHome: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState<null | TMDBMovie>(null);
   
   // Fetch TMDB data
   const { data: popularMovies, loading: popularLoading } = usePopularMovies();
@@ -40,6 +43,7 @@ const TMDBHome: React.FC = () => {
   }
 
   return (
+    <>
     <div className="min-h-screen">
       {/* Hero Carousel */}
       <HeroCarousel 
@@ -80,6 +84,8 @@ const TMDBHome: React.FC = () => {
                 movies={topRatedMoviesList} 
                 variant="default"
                 className="mb-8"
+                disableLink
+                onSelect={(m) => { setSelectedMovie(m); setDetailsOpen(true); }}
               />
             </section>
 
@@ -107,6 +113,8 @@ const TMDBHome: React.FC = () => {
                 movies={trendingMoviesList} 
                 variant="default"
                 className="mb-8"
+                disableLink
+                onSelect={(m) => { setSelectedMovie(m); setDetailsOpen(true); }}
               />
             </section>
 
@@ -134,6 +142,8 @@ const TMDBHome: React.FC = () => {
                 movies={featuredMovies} 
                 variant="default"
                 className="mb-8"
+                disableLink
+                onSelect={(m) => { setSelectedMovie(m); setDetailsOpen(true); }}
               />
             </section>
           </div>
@@ -217,6 +227,48 @@ const TMDBHome: React.FC = () => {
       {/* Platform Stats */}
       <PlatformStats />
     </div>
+    {/* Details Dialog */}
+    <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <DialogContent className="max-w-3xl bg-cinema-darker border-cinema-purple/30">
+        {selectedMovie && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-white">{selectedMovie.title}</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-2">
+              <div className="sm:col-span-1">
+                <img
+                  src={tmdbClient.getImageURL(selectedMovie.poster_path, 'w500')}
+                  alt={selectedMovie.title}
+                  className="w-full rounded-lg shadow"
+                />
+              </div>
+              <div className="sm:col-span-2 space-y-3">
+                <div className="flex items-center gap-4 text-sm text-white/80">
+                  <span>{formatReleaseYear(selectedMovie.release_date)}</span>
+                  <span>•</span>
+                  <span>{selectedMovie.original_language?.toUpperCase?.()}</span>
+                  <span>•</span>
+                  <span>Rating {selectedMovie.vote_average.toFixed(1)}</span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  {selectedMovie.overview}
+                </p>
+                <div className="flex gap-3 pt-2">
+                  <Button asChild className="btn-gold">
+                    <Link to={`/movies/${selectedMovie.id}`}>View Full Details</Link>
+                  </Button>
+                  <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

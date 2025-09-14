@@ -244,6 +244,7 @@ class TMDBClient {
     sortBy?: string;
     voteAverage?: number;
     voteCount?: number;
+    query?: string;
   } = {}): Promise<TMDBResponse<TMDBMovie>> {
     const {
       page = 1,
@@ -251,8 +252,14 @@ class TMDBClient {
       year,
       sortBy = 'popularity.desc',
       voteAverage,
-      voteCount
+      voteCount,
+      query
     } = params;
+
+    // If a free-text search query is provided, route to the search endpoint
+    if (query && query.trim().length > 0) {
+      return this.searchMovies(query, page);
+    }
 
     const queryParams: Record<string, any> = {
       page,

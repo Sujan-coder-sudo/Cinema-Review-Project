@@ -105,7 +105,20 @@ const TMDBMovieDetail: React.FC = () => {
   }
 
   if (error || !movie) {
-    return <Navigate to="/404" replace />;
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center p-8">
+        <Card className="card-gradient p-8 max-w-xl w-full text-center">
+          <h2 className="text-2xl font-bold mb-2">Unable to load movie details</h2>
+          <p className="text-muted-foreground mb-6">{error || 'The movie could not be found or the request failed.'}</p>
+          <div className="flex items-center justify-center gap-3">
+            <Button variant="outline" onClick={() => window.history.back()}>Go Back</Button>
+            <Link to="/movies">
+              <Button>Browse Movies</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   const director = getDirectorFromCredits(movie.credits);

@@ -13,6 +13,8 @@ interface TMDBMovieCardProps {
   showRating?: boolean;
   showYear?: boolean;
   className?: string;
+  disableLink?: boolean;
+  onSelect?: (movie: TMDBMovie) => void;
 }
 
 export const TMDBMovieCard: React.FC<TMDBMovieCardProps> = ({
@@ -22,6 +24,8 @@ export const TMDBMovieCard: React.FC<TMDBMovieCardProps> = ({
   showRating = true,
   showYear = true,
   className = '',
+  disableLink = false,
+  onSelect,
 }) => {
   const posterUrl = tmdbClient.getImageURL(movie.poster_path);
   const releaseYear = formatReleaseYear(movie.release_date);
@@ -88,21 +92,29 @@ export const TMDBMovieCard: React.FC<TMDBMovieCardProps> = ({
 
   const renderContent = () => {
     if (variant === 'compact') {
+      const ImageBlock = (
+        <div className="relative">
+          <img
+            src={posterUrl}
+            alt={movie.title}
+            className={getImageClasses()}
+            loading="lazy"
+          />
+          {renderRating()}
+          {renderGenres()}
+          {renderOverlay()}
+        </div>
+      );
+
       return (
         <Card className={`${getCardClasses()} ${className}`}>
-          <Link to={`/movies/${movie.id}`}>
-            <div className="relative">
-              <img
-                src={posterUrl}
-                alt={movie.title}
-                className={getImageClasses()}
-                loading="lazy"
-              />
-              {renderRating()}
-              {renderGenres()}
-              {renderOverlay()}
+          {disableLink || onSelect ? (
+            <div role="button" onClick={() => onSelect?.(movie)}>
+              {ImageBlock}
             </div>
-          </Link>
+          ) : (
+            <Link to={`/movies/${movie.id}`}>{ImageBlock}</Link>
+          )}
           <CardContent className="p-3">
             <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-cinema-gold transition-colors">
               {movie.title}
@@ -118,20 +130,28 @@ export const TMDBMovieCard: React.FC<TMDBMovieCardProps> = ({
       );
     }
 
+    const ImageBlock = (
+      <div className="relative">
+        <img
+          src={posterUrl}
+          alt={movie.title}
+          className={getImageClasses()}
+          loading="lazy"
+        />
+        {renderRating()}
+        {renderGenres()}
+      </div>
+    );
+
     return (
       <Card className={`${getCardClasses()} ${className}`}>
-        <Link to={`/movies/${movie.id}`}>
-          <div className="relative">
-            <img
-              src={posterUrl}
-              alt={movie.title}
-              className={getImageClasses()}
-              loading="lazy"
-            />
-            {renderRating()}
-            {renderGenres()}
+        {disableLink || onSelect ? (
+          <div role="button" onClick={() => onSelect?.(movie)}>
+            {ImageBlock}
           </div>
-        </Link>
+        ) : (
+          <Link to={`/movies/${movie.id}`}>{ImageBlock}</Link>
+        )}
         {renderOverlay()}
         <CardContent className="p-4">
           <h3 className="font-semibold text-base line-clamp-2 mb-2 group-hover:text-cinema-gold transition-colors">
@@ -210,6 +230,8 @@ export const TMDBMovieGrid: React.FC<{
   showRating?: boolean;
   showYear?: boolean;
   className?: string;
+  disableLink?: boolean;
+  onSelect?: (movie: TMDBMovie) => void;
 }> = ({
   movies,
   variant = 'default',
@@ -217,6 +239,8 @@ export const TMDBMovieGrid: React.FC<{
   showRating = true,
   showYear = true,
   className = '',
+  disableLink = false,
+  onSelect,
 }) => {
   const getGridClasses = () => {
     const baseClasses = 'grid gap-6';
@@ -241,6 +265,8 @@ export const TMDBMovieGrid: React.FC<{
           showGenres={showGenres}
           showRating={showRating}
           showYear={showYear}
+          disableLink={disableLink}
+          onSelect={onSelect}
         />
       ))}
     </div>

@@ -31,6 +31,9 @@ import {
 import MovieCard from '@/components/MovieCard';
 import FilterSidebar from '@/components/FilterSidebar';
 import { useApp } from '@/contexts/AppContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Link } from 'react-router-dom';
+// (no Card usage)
 
 const Movies = () => {
   const { state, dispatch } = useApp();
@@ -41,7 +44,9 @@ const Movies = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(state.searchQuery);
-  
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState<null | (typeof state.movies)[number]>(null);
+
   const moviesPerPage = 12;
 
   // Simulate API call for movies
@@ -53,7 +58,7 @@ const Movies = () => {
         // const response = await fetch('http://localhost:5000/api/movies');
         // const data = await response.json();
         // dispatch({ type: 'SET_MOVIES', payload: data.movies });
-        
+
         // Simulate loading delay
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
@@ -84,7 +89,7 @@ const Movies = () => {
       filtered = filtered.filter(movie =>
         movie.title.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
         movie.director.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
-        movie.cast.some(actor => 
+        movie.cast.some(actor =>
           actor.toLowerCase().includes(state.searchQuery.toLowerCase())
         ) ||
         movie.genre.some(genre =>
@@ -152,7 +157,6 @@ const Movies = () => {
     setCurrentPage(1);
   }, [state.searchQuery, state.selectedGenres, yearRange, sortBy]);
 
-
   return (
     <div className="min-h-screen">
       <div className="flex">
@@ -182,7 +186,7 @@ const Movies = () => {
                     Explore our collection of {state.movies.length} movies
                   </p>
                 </div>
-                
+
                 {/* Advanced Search */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1 max-w-md">
@@ -194,7 +198,7 @@ const Movies = () => {
                       className="pl-10 bg-secondary/50 border-cinema-purple/30 focus:border-cinema-gold"
                     />
                   </div>
-                  
+
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="w-40 bg-secondary/50 border-cinema-purple/30 focus:border-cinema-gold">
                       <SelectValue placeholder="Sort by" />
@@ -311,15 +315,20 @@ const Movies = () => {
             ) : paginatedMovies.length > 0 ? (
               <>
                 <div className={`grid gap-6 mb-8 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' 
+                  viewMode === 'grid'
+                    ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
                     : 'grid-cols-1'
                 }`}>
                   {paginatedMovies.map((movie) => (
-                    <MovieCard 
-                      key={movie.id} 
-                      movie={movie} 
+                    <MovieCard
+                      key={movie.id}
+                      movie={movie}
                       variant={viewMode === 'list' ? 'large' : 'default'}
+                      disableLink
+                      onSelect={(m) => {
+                        setSelectedMovie(m);
+                        setDetailsOpen(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -329,12 +338,12 @@ const Movies = () => {
                   <Pagination className="justify-center">
                     <PaginationContent>
                       <PaginationItem>
-                        <PaginationPrevious 
+                        <PaginationPrevious
                           onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                           className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                         />
                       </PaginationItem>
-                      
+
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                         if (
                           page === 1 ||
@@ -364,9 +373,9 @@ const Movies = () => {
                         }
                         return null;
                       })}
-                      
+
                       <PaginationItem>
-                        <PaginationNext 
+                        <PaginationNext
                           onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                           className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                         />
@@ -389,6 +398,57 @@ const Movies = () => {
           </div>
         </main>
       </div>
+
+      {/* Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-3xl bg-cinema-darker border-cinema-purple/30">
+          {selectedMovie && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white">
+                  {selectedMovie.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-2">
+                <div className="sm:col-span-1">
+                  <img
+                    src={selectedMovie.poster}
+                    alt={selectedMovie.title}
+                    className="w-full rounded-lg shadow"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-3">
+                  <div className="flex items-center gap-4 text-sm text-white/80">
+                    <span>{selectedMovie.year}</span>
+                    <span>•</span>
+                    <span>{selectedMovie.duration}m</span>
+                    <span>•</span>
+                    <span>{selectedMovie.director}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMovie.genre.map((g) => (
+                      <Badge key={g} className="bg-cinema-gold/20 text-cinema-gold border-cinema-gold/30">
+                        {g}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {selectedMovie.synopsis}
+                  </p>
+                  <div className="flex gap-3 pt-2">
+                    <Button asChild className="btn-gold">
+                      <Link to={`/movies/${selectedMovie.id}`}>View Full Details</Link>
+                    </Button>
+                    <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -396,8 +456,8 @@ const Movies = () => {
 // Loading Skeleton Component
 const MoviesSkeleton = ({ viewMode }: { viewMode: 'grid' | 'list' }) => (
   <div className={`grid gap-6 mb-8 ${
-    viewMode === 'grid' 
-      ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' 
+    viewMode === 'grid'
+      ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
       : 'grid-cols-1'
   }`}>
     {[...Array(12)].map((_, i) => (
