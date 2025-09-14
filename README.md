@@ -4,6 +4,7 @@
 A modern, responsive movie discovery and review platform built with **React, TypeScript, Tailwind CSS, shadcn/ui, Node.js, Express, and MongoDB (Mongoose)**.  
 Easily search movies via **TMDB API**, write reviews, maintain a watchlist, and track your movie activity.
 
+
 ![React](https://img.shields.io/badge/React-18-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![Express](https://img.shields.io/badge/Express.js-Backend-green)
@@ -11,7 +12,10 @@ Easily search movies via **TMDB API**, write reviews, maintain a watchlist, and 
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
+# How to use
+[![How to Use](https://img.youtube.com/vi/cTPl8TzRjTc/0.jpg)](https://www.youtube.com/watch?v=cTPl8TzRjTc)
 
+---
 ## 📌 Table of Contents
 
 - [✨ Features](#-features)
