@@ -1,279 +1,301 @@
-# CinemaReview - Movie Review Platform Frontend
+Absolutely, Sujan — here’s your complete and polished `README.md` file, ready to drop into your GitHub repo. It’s formatted for clarity, beginner-friendliness, and professional presentation:
 
-A modern, responsive React application for reviewing and discovering movies. Built with TypeScript, Tailwind CSS, and shadcn/ui components.
+---
 
-## 🎬 Features
+```markdown
+# 🎬 CinemaReview - Full-Stack Movie Review Platform
 
-### Core Functionality
-- **Movie Discovery**: Browse and search through a comprehensive movie database
-- **User Reviews**: Write and read detailed movie reviews with star ratings
-- **Watchlist Management**: Save movies to your personal watchlist
-- **User Profiles**: Manage your profile, view review history, and track activity
-- **Authentication**: Secure login and registration with JWT tokens
+A modern, responsive movie discovery and review platform built with **React, TypeScript, Tailwind CSS, shadcn/ui, Node.js, Express, and MongoDB (Mongoose)**.  
+Easily search movies via **TMDB API**, write reviews, maintain a watchlist, and track your movie activity.
 
-### Advanced Features
-- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Advanced Filtering**: Filter movies by genre, year, rating, and more
-- **Search Functionality**: Search movies by title, director, cast, or genre
-- **Trailer Integration**: Watch movie trailers in modal dialogs
-- **Real-time Updates**: Optimistic UI updates for better user experience
-- **Error Handling**: Comprehensive error boundaries and user feedback
-- **Loading States**: Beautiful loading skeletons and spinners
-- **Accessibility**: WCAG compliant with keyboard navigation support
+![React](https://img.shields.io/badge/React-18-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Express](https://img.shields.io/badge/Express.js-Backend-green)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-darkgreen)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-## 🚀 Tech Stack
+---
 
-- **React 18** - Modern React with hooks and concurrent features
-- **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and development server
-- **Tailwind CSS** - Utility-first CSS framework
-- **shadcn/ui** - Beautiful, accessible UI components
-- **React Router** - Client-side routing
-- **React Query** - Server state management
-- **Lucide React** - Beautiful icons
-- **React Hook Form** - Form handling
-- **Zustand/Context API** - State management
+## 📌 Table of Contents
+
+- [✨ Features](#-features)
+- [🛠️ Tech Stack](#-tech-stack)
+- [📁 Project Structure](#-project-structure)
+- [⚡ Quick Start](#-quick-start)
+- [⚙️ Backend Setup](#-backend-setup)
+- [🎨 Frontend Setup](#-frontend-setup)
+- [🗄️ Database Setup](#-database-setup)
+- [🔌 API Endpoints](#-api-endpoints)
+- [🚀 Deployment](#-deployment)
+- [📱 Responsive Design](#-responsive-design)
+- [♿ Accessibility](#-accessibility)
+- [🔒 Security](#-security)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
+
+---
+
+## ✨ Features
+
+- 🎥 Movie Discovery – Search & filter movies using TMDB  
+- 📝 User Reviews – Post, edit, and delete your own reviews  
+- ⭐ Ratings System – Rate movies with stars  
+- 📌 Watchlist – Add/remove movies to your watchlist  
+- 🕒 Activity Tracking – Keep track of viewed movies  
+- 👤 User Profiles – Manage profile, view history, activity logs  
+- 🔑 Authentication – JWT-based secure login/register  
+- 🎬 Trailers Integration – Watch trailers from TMDB in modal dialogs  
+- 📱 Responsive Design – Mobile-first, works across all devices  
+
+---
+
+## 🛠️ Tech Stack
+
+**Frontend:**
+
+- React 18 + Vite  
+- TypeScript  
+- TailwindCSS + shadcn/ui  
+- React Router v6  
+- React Query  
+- Zustand (state management)
+
+**Backend:**
+
+- Node.js + Express  
+- MongoDB + Mongoose  
+- JWT Authentication
+
+**External APIs:**
+
+- TMDB (The Movie Database)
+
+---
 
 ## 📁 Project Structure
 
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── ui/             # shadcn/ui components
-│   ├── ErrorBoundary.tsx
-│   ├── LoadingSpinner.tsx
-│   ├── MovieCard.tsx
-│   ├── ReviewCard.tsx
-│   └── ...
-├── contexts/           # React contexts
-│   └── AppContext.tsx
-├── hooks/              # Custom React hooks
-│   ├── useApi.ts
-│   ├── use-mobile.tsx
-│   └── use-toast.ts
-├── lib/                # Utility functions and configurations
-│   ├── api.ts          # API service layer
-│   ├── mockData.ts     # Mock data for development
-│   └── utils.ts
-├── pages/              # Page components
-│   ├── Home.tsx
-│   ├── Movies.tsx
-│   ├── MovieDetail.tsx
-│   ├── Profile.tsx
-│   ├── Auth.tsx
-│   └── NotFound.tsx
-├── App.tsx             # Main app component
-├── main.tsx           # App entry point
-└── index.css          # Global styles
+cine-spark-54/
+├── movies-api/           # Backend (Express + MongoDB)
+│   ├── models/           # Mongoose schemas (User, Review, Watchlist, etc.)
+│   ├── routes/           # Express routes
+│   ├── controllers/      # Business logic
+│   └── server.js         # Entry point
+│
+├── src/                  # Frontend (React + Vite)
+│   ├── components/       # UI components
+│   ├── pages/            # Page components
+│   ├── contexts/         # React contexts
+│   ├── hooks/            # Custom hooks
+│   └── lib/              # API utilities
+│
+└── README.md             # Documentation
 ```
-
-## 🛠️ Installation & Setup
-
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- Backend API running on `http://localhost:5000`
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd cine-spark-54
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. **Environment Setup**
-   Create a `.env.local` file in the root directory:
-   ```env
-   VITE_API_BASE_URL=http://localhost:5000/api
-   VITE_APP_NAME=CinemaReview
-   ```
-
-4. **Start the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-5. **Open your browser**
-   Navigate to `http://localhost:5173`
-
-## 🎨 Design System
-
-### Color Palette
-- **Primary Gold**: `#D4AF37` - Used for highlights and CTAs
-- **Cinema Purple**: `#6B46C1` - Primary brand color
-- **Cinema Blue**: `#3B82F6` - Secondary accent
-- **Cinema Darker**: `#1F2937` - Dark backgrounds
-- **Cinema Silver**: `#9CA3AF` - Muted text
-
-### Typography
-- **Headings**: Inter font family with varying weights
-- **Body Text**: System font stack for optimal readability
-- **Code**: JetBrains Mono for code snippets
-
-### Components
-All components follow the shadcn/ui design system with custom cinema-themed styling.
-
-## 🔌 API Integration
-
-The frontend integrates with a Node.js/Express backend API. Key endpoints include:
-
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
-
-### Movies
-- `GET /api/movies` - Get paginated movie list
-- `GET /api/movies/:id` - Get movie details
-- `GET /api/movies/search` - Search movies
-
-### Reviews
-- `GET /api/movies/:id/reviews` - Get movie reviews
-- `POST /api/movies/:id/reviews` - Create review
-- `PUT /api/reviews/:id` - Update review
-- `DELETE /api/reviews/:id` - Delete review
-
-### Users
-- `GET /api/users/:id` - Get user profile
-- `PUT /api/users/:id` - Update profile
-- `GET /api/users/:id/watchlist` - Get user watchlist
-- `POST /api/users/:id/watchlist` - Add to watchlist
-- `DELETE /api/users/:id/watchlist/:movieId` - Remove from watchlist
-
-## 🧪 Development
-
-### Available Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript compiler
-
-### Code Quality
-- **ESLint** - Code linting with custom rules
-- **Prettier** - Code formatting
-- **TypeScript** - Static type checking
-- **Husky** - Git hooks for quality assurance
-
-### Testing
-```bash
-# Run unit tests
-npm run test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run e2e tests
-npm run test:e2e
-```
-
-## 📱 Responsive Design
-
-The application is fully responsive with breakpoints:
-- **Mobile**: `< 768px`
-- **Tablet**: `768px - 1024px`
-- **Desktop**: `> 1024px`
-- **Large Desktop**: `> 1440px`
-
-### Mobile Optimizations
-- Touch-friendly interface
-- Optimized image loading
-- Reduced bundle size
-- Progressive Web App features
-
-## ♿ Accessibility
-
-- **WCAG 2.1 AA** compliant
-- **Keyboard navigation** support
-- **Screen reader** compatibility
-- **High contrast** mode support
-- **Focus management** for modals and forms
-
-## 🚀 Performance
-
-### Optimizations
-- **Code splitting** with React.lazy()
-- **Image optimization** with lazy loading
-- **Bundle analysis** and optimization
-- **Service worker** for caching
-- **Tree shaking** for smaller bundles
-
-### Performance Metrics
-- **First Contentful Paint**: < 1.5s
-- **Largest Contentful Paint**: < 2.5s
-- **Cumulative Layout Shift**: < 0.1
-- **First Input Delay**: < 100ms
-
-## 🔒 Security
-
-- **JWT token** authentication
-- **Secure HTTP headers**
-- **XSS protection**
-- **CSRF protection**
-- **Content Security Policy**
-
-## 🌐 Browser Support
-
-- **Chrome** 90+
-- **Firefox** 88+
-- **Safari** 14+
-- **Edge** 90+
-
-## 📦 Deployment
-
-### Build for Production
-```bash
-npm run build
-```
-
-### Deploy to Vercel
-```bash
-npm install -g vercel
-vercel --prod
-```
-
-### Deploy to Netlify
-```bash
-npm run build
-# Upload dist/ folder to Netlify
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **shadcn/ui** for beautiful components
-- **Tailwind CSS** for utility-first styling
-- **Vite** for fast development experience
-- **React** team for the amazing framework
-- **Movie Database APIs** for data sources
-
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Contact the development team
-- Check the documentation wiki
 
 ---
 
-**Made with ❤️ by the CinemaReview Team**
+## ⚡ Quick Start
+
+```bash
+git clone <repository-url>
+cd cine-spark-54
+```
+
+- Run Backend → `movies-api` on port `5000`  
+- Run Frontend → Vite dev server on port `8080`
+
+---
+
+## ⚙️ Backend Setup
+
+```bash
+cd movies-api
+npm install
+```
+
+Create a `.env` file:
+
+```env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/cinema_review_db
+JWT_SECRET=supersecretkey
+```
+
+Start MongoDB:
+
+```bash
+mongod
+```
+
+(optional shell):
+
+```bash
+mongosh
+```
+
+Run backend:
+
+```bash
+npm start
+```
+
+✅ Output:
+
+```
+Server running on http://localhost:5000
+MongoDB connected
+```
+
+---
+
+## 🎨 Frontend Setup
+
+```bash
+cd ..
+npm install
+```
+
+Create `.env.local`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_APP_NAME=CinemaReview
+
+VITE_TMDB_API_KEY=fe35a4ff09d24629439326403d8715c7
+VITE_TMDB_BASE_URL=https://api.themoviedb.org/3
+VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
+```
+
+Run frontend:
+
+```bash
+npm run dev
+```
+
+✅ Visit: [http://localhost:8080](http://localhost:8080)
+
+---
+
+## 🗄️ Database Setup
+
+We use **MongoDB + Mongoose**.
+
+Basic models:
+
+- **User**: username, email, password (hashed), watchlist, viewed
+- **Review**: movieId, userId, rating, comment, createdAt
+- **Watchlist**: references User + Movies
+- **ViewedMovie**: history of watched movies
+
+Check DB:
+
+```bash
+mongosh
+use cinema_review_db
+show collections
+```
+
+---
+
+## 🔌 API Endpoints
+
+### Auth
+
+- `POST /api/auth/register` → Register new user  
+- `POST /api/auth/login` → Login & get JWT  
+
+### Movies
+
+- `GET /api/movies` → Get all movies  
+- `GET /api/movies/:id` → Get single movie  
+
+### Reviews
+
+- `POST /api/movies/:id/reviews` → Add review  
+- `GET /api/movies/:id/reviews` → Get reviews  
+- `DELETE /api/reviews/:id` → Delete review  
+
+### User
+
+- `GET /api/users/:id` → Profile info  
+- `GET /api/users/:id/watchlist` → Watchlist  
+- `POST /api/users/:id/watchlist` → Add movie to watchlist  
+- `GET /api/users/:id/viewed` → Viewed movies history  
+
+---
+
+## 🚀 Deployment
+
+### Frontend
+
+```bash
+npm run build
+```
+
+Deploy `/dist` → Netlify, Vercel, etc.
+
+### Backend
+
+Use Heroku, Railway, or Render.  
+Set environment variables:
+
+- `MONGO_URI` (Atlas recommended)  
+- `JWT_SECRET`  
+- `PORT`
+
+---
+
+## 📱 Responsive Design
+
+- Mobile: `< 768px`  
+- Tablet: `768px - 1024px`  
+- Desktop: `> 1024px`
+
+---
+
+## ♿ Accessibility
+
+- WCAG 2.1 AA compliant  
+- Keyboard navigation  
+- Screen reader support
+
+---
+
+## 🔒 Security
+
+- JWT authentication  
+- Password hashing with bcrypt  
+- Helmet middleware  
+- XSS & CSRF protection
+
+---
+
+## 🤝 Contributing
+
+```bash
+# Fork the repo
+git checkout -b feature/awesome-feature
+git commit -m "Added awesome feature"
+git push origin feature/awesome-feature
+```
+
+Open a Pull Request 🚀
+
+---
+
+## 📄 License
+
+Licensed under the **MIT License** – free to use & modify.
+
+---
+
+## 🙏 Acknowledgments
+
+- [TMDB](https://www.themoviedb.org/)  
+- [shadcn/ui](https://ui.shadcn.com/)  
+- [Tailwind CSS](https://tailwindcss.com/)
+```
+
+---
+
