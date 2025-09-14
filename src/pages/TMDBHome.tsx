@@ -80,13 +80,13 @@ const TMDBHome: React.FC = () => {
                 </Button>
               </div>
               
-              <TMDBMovieGrid 
-                movies={topRatedMoviesList} 
-                variant="default"
-                className="mb-8"
-                disableLink
-                onSelect={(m) => { setSelectedMovie(m); setDetailsOpen(true); }}
-              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8">
+                {topRatedMoviesList.map(movie => (
+                  <Link to={`/movies/${movie.id}`} key={movie.id}>
+                    <TMDBMovieCard movie={movie} variant="default" />
+                  </Link>
+                ))}
+              </div>
             </section>
 
             {/* Trending Now */}
@@ -109,13 +109,13 @@ const TMDBHome: React.FC = () => {
                 </Button>
               </div>
               
-              <TMDBMovieGrid 
-                movies={trendingMoviesList} 
-                variant="default"
-                className="mb-8"
-                disableLink
-                onSelect={(m) => { setSelectedMovie(m); setDetailsOpen(true); }}
-              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8">
+                {trendingMoviesList.map(movie => (
+                  <Link to={`/movies/${movie.id}`} key={movie.id}>
+                    <TMDBMovieCard movie={movie} variant="default" />
+                  </Link>
+                ))}
+              </div>
             </section>
 
             {/* Popular Movies */}
@@ -138,13 +138,13 @@ const TMDBHome: React.FC = () => {
                 </Button>
               </div>
               
-              <TMDBMovieGrid 
-                movies={featuredMovies} 
-                variant="default"
-                className="mb-8"
-                disableLink
-                onSelect={(m) => { setSelectedMovie(m); setDetailsOpen(true); }}
-              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8">
+                {featuredMovies.map(movie => (
+                  <Link to={`/movies/${movie.id}`} key={movie.id}>
+                    <TMDBMovieCard movie={movie} variant="default" />
+                  </Link>
+                ))}
+              </div>
             </section>
           </div>
 
