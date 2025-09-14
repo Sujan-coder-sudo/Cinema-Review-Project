@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import StarRating from '@/components/StarRating';
 import MovieCard from '@/components/MovieCard';
+import ReviewCard from '@/components/ReviewCard';
 import { useApp, useAuth } from '@/contexts/AppContext';
 
 const Profile = () => {
@@ -143,62 +144,18 @@ const Profile = () => {
             </div>
 
             {userReviews.length > 0 ? (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {userReviews.map((review) => {
                   const movie = state.movies.find(m => m.id === review.movieId);
                   if (!movie) return null;
 
                   return (
-                    <Card key={review.id} className="card-gradient p-6">
-                      <div className="flex gap-6">
-                        <Link to={`/movies/${movie.id}`} className="flex-shrink-0">
-                          <img
-                            src={movie.poster}
-                            alt={movie.title}
-                            className="w-20 h-30 object-cover rounded-lg hover:scale-105 transition-transform"
-                          />
-                        </Link>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <Link 
-                                to={`/movies/${movie.id}`}
-                                className="text-xl font-bold text-foreground hover:text-cinema-gold transition-colors"
-                              >
-                                {movie.title}
-                              </Link>
-                              <div className="text-sm text-muted-foreground">
-                                {movie.year} • {movie.director}
-                              </div>
-                            </div>
-                            
-                            <div className="text-right">
-                              <StarRating rating={review.rating} size="sm" />
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {new Date(review.timestamp).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <p className="text-muted-foreground leading-relaxed mb-3">
-                            {review.text}
-                          </p>
-                          
-                          <div className="flex flex-wrap gap-2">
-                            {movie.genre.map((genre) => (
-                              <Badge 
-                                key={genre}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {genre}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
+                    <ReviewCard
+                      key={review.id}
+                      review={review}
+                      movie={movie}
+                      showMovie={true}
+                    />
                   );
                 })}
               </div>

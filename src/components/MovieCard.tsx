@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface MovieCardProps {
   movie: Movie;
-  variant?: 'default' | 'large';
+  variant?: 'default' | 'large' | 'grid' | 'list';
   className?: string;
 }
 

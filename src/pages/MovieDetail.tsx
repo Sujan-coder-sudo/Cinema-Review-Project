@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import StarRating from '@/components/StarRating';
+import ReviewCard from '@/components/ReviewCard';
 import { useApp, useAuth } from '@/contexts/AppContext';
 import { Review } from '@/lib/mockData';
 
@@ -242,35 +243,12 @@ const MovieDetail = () => {
                 )}
 
                 {/* Reviews List */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {movieReviews.length > 0 ? (
-                    movieReviews.map((review) => (
-                      <div key={review.id} className="space-y-3">
-                        <div className="flex items-start space-x-4">
-                          <Avatar>
-                            <AvatarImage src={review.userAvatar} alt={review.username} />
-                            <AvatarFallback>
-                              {review.username.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <div className="font-semibold">{review.username}</div>
-                                <StarRating rating={review.rating} size="sm" />
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {new Date(review.timestamp).toLocaleDateString()}
-                              </div>
-                            </div>
-                            
-                            <p className="text-muted-foreground leading-relaxed">
-                              {review.text}
-                            </p>
-                          </div>
-                        </div>
-                        <Separator />
+                    movieReviews.map((review, index) => (
+                      <div key={review.id}>
+                        <ReviewCard review={review} />
+                        {index < movieReviews.length - 1 && <Separator className="mt-4" />}
                       </div>
                     ))
                   ) : (
