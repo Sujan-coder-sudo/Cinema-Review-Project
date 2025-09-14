@@ -57,16 +57,13 @@ const MovieCard: React.FC<MovieCardProps> = ({
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
           
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-cinema-darker/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          {/* Overlay (decorative only to avoid nested interactive elements inside Link) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-cinema-darker/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             <div className="absolute bottom-4 left-4 right-4">
-              <Button
-                size="sm"
-                className="w-full bg-cinema-gold/90 hover:bg-cinema-gold text-cinema-darker font-semibold"
-              >
+              <div className="w-full flex items-center justify-center rounded-md bg-cinema-gold/90 text-cinema-darker font-semibold py-2">
                 <Play className="mr-2 h-4 w-4" />
                 {variant === 'large' ? 'View Details' : 'Watch Trailer'}
-              </Button>
+              </div>
             </div>
           </div>
 

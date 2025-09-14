@@ -1,30 +1,132 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Calendar, Star, Heart, Film, Edit, Settings } from 'lucide-react';
+import { Calendar, Star, Heart, Film, Edit, Settings, Camera, Trash2, MoreVertical, TrendingUp, Award, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 import StarRating from '@/components/StarRating';
 import MovieCard from '@/components/MovieCard';
 import ReviewCard from '@/components/ReviewCard';
 import { useApp, useAuth } from '@/contexts/AppContext';
+import { Review, Movie } from '@/lib/mockData';
 
 const Profile = () => {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(true);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
+  const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([]);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
+    bio: ''
+  });
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  const userReviews = state.reviews.filter(review => review.userId === user.id);
-  const watchlistMovies = state.movies.filter(movie => user.watchlist.includes(movie.id));
+  // Simulate API calls
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoading(true);
+      try {
+        // TODO: Replace with actual API calls
+        // const reviewsResponse = await fetch(`http://localhost:5000/api/users/${user.id}/reviews`);
+        // const watchlistResponse = await fetch(`http://localhost:5000/api/users/${user.id}/watchlist`);
+        
+        // For now, use mock data
+        const reviews = state.reviews.filter(review => review.userId === user.id);
+        const watchlist = state.movies.filter(movie => user.watchlist.includes(movie.id));
+        
+        setUserReviews(reviews);
+        setWatchlistMovies(watchlist);
+        setEditForm({
+          username: user.username,
+          email: user.email,
+          bio: '' // Add bio field to user model
+        });
+        
+        // Simulate loading delay
+        await new Promise(resolve => setTimeout(resolve, 600));
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user.id, state.reviews, state.movies, user.watchlist, user.username, user.email, toast]);
+
   const averageRating = userReviews.length > 0 
     ? userReviews.reduce((sum, review) => sum + review.rating, 0) / userReviews.length
     : 0;
+
+  const handleEditProfile = async () => {
+    try {
+      // TODO: Replace with actual API call
+      // const response = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(editForm)
+      // });
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
+      });
+      setShowEditProfile(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveFromWatchlist = async (movieId: string) => {
+    try {
+      // TODO: Replace with actual API call
+      // await fetch(`http://localhost:5000/api/users/${user.id}/watchlist/${movieId}`, {
+      //   method: 'DELETE'
+      // });
+      
+      dispatch({ type: 'REMOVE_FROM_WATCHLIST', payload: movieId });
+      toast({
+        title: "Removed from Watchlist",
+        description: "Movie has been removed from your watchlist",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove from watchlist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return <ProfileSkeleton />;
+  }
 
   return (
     <div className="min-h-screen pt-8 pb-16">
@@ -68,10 +170,57 @@ const Profile = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Profile
-                      </Button>
+                      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Profile
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Edit Profile</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium">Username</label>
+                              <Input
+                                value={editForm.username}
+                                onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Email</label>
+                              <Input
+                                type="email"
+                                value={editForm.email}
+                                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Bio</label>
+                              <Textarea
+                                placeholder="Tell us about yourself..."
+                                value={editForm.bio}
+                                onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                                className="mt-1"
+                                rows={3}
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button onClick={handleEditProfile} className="flex-1">
+                                Save Changes
+                              </Button>
+                              <Button variant="outline" onClick={() => setShowEditProfile(false)}>
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      
                       <Button variant="outline" size="sm">
                         <Settings className="mr-2 h-4 w-4" />
                         Settings
@@ -182,7 +331,33 @@ const Profile = () => {
             {watchlistMovies.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                 {watchlistMovies.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} />
+                  <div key={movie.id} className="relative group">
+                    <MovieCard movie={movie} />
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/80 backdrop-blur">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/movies/${movie.id}`} className="flex items-center">
+                              <Film className="mr-2 h-4 w-4" />
+                              View Details
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleRemoveFromWatchlist(movie.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove from Watchlist
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -256,5 +431,70 @@ const Profile = () => {
     </div>
   );
 };
+
+// Loading Skeleton Component
+const ProfileSkeleton = () => (
+  <div className="min-h-screen pt-8 pb-16">
+    <div className="container mx-auto px-4">
+      {/* Profile Header Skeleton */}
+      <Card className="mb-8">
+        <div className="relative overflow-hidden rounded-t-lg">
+          <Skeleton className="h-32 w-full" />
+          
+          <div className="relative px-6 pb-6 -mt-16">
+            <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
+              <Skeleton className="h-32 w-32 rounded-full" />
+              
+              <div className="flex-1">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Skeleton */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i} className="p-4 text-center">
+                  <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                  <Skeleton className="h-4 w-16 mx-auto" />
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Tabs Skeleton */}
+      <div className="space-y-6">
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-28" />
+          <Skeleton className="h-10 w-20" />
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export default Profile;

@@ -4,12 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider, useAuth } from "@/contexts/AppContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import Movies from "@/pages/Movies";
 import MovieDetail from "@/pages/MovieDetail";
+import TMDBHome from "@/pages/TMDBHome";
+import TMDBMovies from "@/pages/TMDBMovies";
+import TMDBMovieDetail from "@/pages/TMDBMovieDetail";
+import TMDBDemo from "@/components/TMDBDemo";
 import Auth from "@/pages/Auth";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
@@ -34,9 +39,10 @@ const AppRoutes = () => (
       <Header />
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/movies" element={<Movies />} />
-          <Route path="/movies/:id" element={<MovieDetail />} />
+          <Route path="/" element={<TMDBHome />} />
+          <Route path="/movies" element={<TMDBMovies />} />
+          <Route path="/movies/:id" element={<TMDBMovieDetail />} />
+          <Route path="/demo" element={<TMDBDemo />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/register" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
@@ -51,15 +57,17 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AppProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppRoutes />
-      </TooltipProvider>
-    </AppProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AppProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppRoutes />
+        </TooltipProvider>
+      </AppProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
