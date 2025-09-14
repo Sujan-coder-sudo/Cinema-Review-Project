@@ -128,7 +128,7 @@ const TMDBMovieDetail: React.FC = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[70vh] overflow-hidden">
+      <section className="relative min-h-[70vh] md:min-h-[85vh]">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ 
@@ -138,7 +138,7 @@ const TMDBMovieDetail: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-cinema-darker via-cinema-darker/60 to-transparent" />
         
         <div className="relative h-full flex items-end">
-          <div className="container mx-auto px-4 pb-8">
+          <div className="container mx-auto px-4 pb-10 md:pb-12">
             <div className="flex flex-col lg:flex-row gap-8 items-end">
               {/* Poster */}
               <div className="flex-shrink-0">
@@ -255,7 +255,7 @@ const TMDBMovieDetail: React.FC = () => {
       </section>
 
       {/* Main Content */}
-      <section className="py-8">
+      <section className="py-8 mt-8 md:mt-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
@@ -278,7 +278,7 @@ const TMDBMovieDetail: React.FC = () => {
                 {director && (
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-3 text-cinema-gold">Director</h3>
-                    <div className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/30">
+                    <Link to={`/person/${director.id}`} className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/40 transition">
                       <Avatar className="h-12 w-12">
                         <AvatarImage src={tmdbClient.getProfileURL(director.profile_path)} />
                         <AvatarFallback className="bg-cinema-purple/20 text-cinema-gold font-semibold">
@@ -286,10 +286,10 @@ const TMDBMovieDetail: React.FC = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{director.name}</div>
+                        <div className="font-medium hover:text-cinema-gold">{director.name}</div>
                         <div className="text-sm text-muted-foreground">Director</div>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 )}
                 
@@ -297,16 +297,16 @@ const TMDBMovieDetail: React.FC = () => {
                   <h3 className="text-lg font-semibold mb-3 text-cinema-gold">Cast</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {castWithImages.map((actor) => (
-                      <div key={actor.id} className="flex flex-col items-center text-center">
+                      <Link key={actor.id} to={`/person/${actor.id}`} className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-secondary/30 transition">
                         <Avatar className="h-16 w-16 mb-2">
                           <AvatarImage src={actor.profileUrl} />
                           <AvatarFallback className="bg-cinema-purple/20 text-cinema-gold font-semibold">
                             {actor.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="font-medium text-sm">{actor.name}</div>
+                        <div className="font-medium text-sm hover:text-cinema-gold">{actor.name}</div>
                         <div className="text-xs text-muted-foreground">{actor.character}</div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

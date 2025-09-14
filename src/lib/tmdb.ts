@@ -135,7 +135,7 @@ class TMDBClient {
     }
   }
 
-  private async request<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
+  async request<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
     const url = new URL(`${this.config.baseURL}${endpoint}`);
     
     // Add API key to params
@@ -186,6 +186,26 @@ class TMDBClient {
     return `${this.config.imageBaseURL}/${size}${path}`;
   }
 
+  // Search API
+  async searchMulti(query: string, page: number = 1): Promise<any[]> {
+    try {
+      const response = await this.request<{ results: any[] }>('/search/multi', {
+        query,
+        page,
+        include_adult: false,
+      });
+      
+      // Filter out adult content and ensure we have valid results
+      return response.results.filter((item: any) => 
+        !item.adult && 
+        (item.media_type === 'movie' || item.media_type === 'person' || item.media_type === 'tv')
+      );
+    } catch (error) {
+      console.error('Error in searchMulti:', error);
+      return [];
+    }
+  }
+
   // Movies API
   async getPopularMovies(page: number = 1): Promise<TMDBResponse<TMDBMovie>> {
     return this.request<TMDBResponse<TMDBMovie>>('/movie/popular', { page });
@@ -213,6 +233,16 @@ class TMDBClient {
       params.append_to_response = appendToResponse;
     }
     return this.request<TMDBMovieDetails>(`/movie/${id}`, params);
+  }
+
+  // Get person details with optional appended data
+  // Using a broad return type here to avoid cross-file type coupling
+  async getPersonDetails(personId: number, appendToResponse?: string): Promise<any> {
+    const params: Record<string, any> = {};
+    if (appendToResponse) {
+      params.append_to_response = appendToResponse;
+    }
+    return this.request<any>(`/person/${personId}`, params);
   }
 
   async searchMovies(query: string, page: number = 1): Promise<TMDBResponse<TMDBMovie>> {

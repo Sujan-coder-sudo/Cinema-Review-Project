@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, LogOut, Film, Heart, Menu } from "lucide-react";
+import { Search, User, LogOut, Film, Heart, Menu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,19 +11,46 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useApp, useAuth } from "@/contexts/AppContext";
+import { tmdbClient } from '../lib/tmdb';
+import { Movie, Person } from '../types/tmdb';
 
 const Header = () => {
   const { dispatch } = useApp();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Array<Movie | Person>>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/movies?query=${encodeURIComponent(searchQuery.trim())}`);
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const results = await tmdbClient.searchMulti(searchQuery);
+      setSearchResults(results.slice(0, 5)); // Show top 5 results
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
+  };
+
+  const handleResultClick = (result: Movie | Person) => {
+    if ('title' in result) {
+      // It's a movie
+      navigate(`/movies/${result.id}`);
+    } else {
+      // It's a person
+      navigate(`/person/${result.id}`);
+    }
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   const handleLogout = () => {
@@ -31,8 +58,21 @@ const Header = () => {
     navigate("/");
   };
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchResults([]);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [searchRef]);
+
   return (
-    <header className="sticky top-0 z-50 backdrop-cinema border-b border-cinema-purple/20 shadow-md shadow-cinema-purple/10">
+    <header className="sticky top-0 z-50 bg-background/60 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b border-cinema-purple/20 shadow-md shadow-cinema-purple/10">
       <div className="container mx-auto px-4 lg:px-6 py-3 flex flex-col lg:flex-row items-center justify-between gap-4">
         
         {/* Left: Logo */}
@@ -64,24 +104,68 @@ const Header = () => {
         {/* Middle: Search + Nav (desktop only) */}
         <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 w-full max-w-4xl">
           {/* Search */}
-          <form
-            onSubmit={handleSearch}
-            className="relative w-full max-w-lg group"
-          >
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-cinema-gold transition-colors duration-300" />
-            <Input
-              placeholder="Search movies, actors, directors..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 py-3 bg-secondary/50 border-cinema-purple/30 focus:border-cinema-gold focus:ring-2 focus:ring-cinema-gold/20 rounded-xl text-lg placeholder:text-muted-foreground/60 transition-all duration-300 hover:bg-secondary/70 w-full"
-            />
-          </form>
+          <div className="hidden md:flex-1 md:flex md:justify-center px-4 relative" ref={searchRef}>
+            <form onSubmit={handleSearch} className="w-full max-w-xl">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search for movies, TV shows, people..."
+                  className="w-full bg-gray-800 text-white px-4 py-2 pl-10 pr-4 rounded-full focus:outline-none focus:ring-2 focus:ring-cinema-gold"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  ref={inputRef}
+                />
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 animate-spin" />
+                )}
+                {searchResults.length > 0 && (
+                  <div className="absolute z-50 mt-1 w-full bg-gray-800 rounded-lg shadow-lg border border-gray-700 max-h-96 overflow-y-auto">
+                    {searchResults.map((result) => (
+                      <div
+                        key={`${'title' in result ? 'movie' : 'person'}-${result.id}`}
+                        className="p-3 hover:bg-gray-700 cursor-pointer flex items-center space-x-3"
+                        onClick={() => handleResultClick(result)}
+                      >
+                        {'poster_path' in result ? (
+                          <img
+                            src={result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : '/placeholder-movie.png'}
+                            alt={result.title}
+                            className="w-10 h-15 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-10 h-15 bg-gray-700 rounded flex items-center justify-center">
+                            <User className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-white">
+                            {'title' in result ? result.title : result.name}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            {result.media_type === 'movie' 
+                              ? 'Movie' 
+                              : result.media_type === 'tv' 
+                                ? 'TV Show' 
+                                : 'Person'}
+                            {result.media_type === 'person' ? '' : 
+                              (('release_date' in result && result.release_date) || ('first_air_date' in result && result.first_air_date)) 
+                                ? ` • ${(result.release_date || result.first_air_date)?.split('-')[0]}` 
+                                : ''}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </form>
+          </div>
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center space-x-8">
             <Link to="/" className="header-link">Home</Link>
             <Link to="/movies" className="header-link">Movies</Link>
-            <Link to="/demo" className="header-link">Demo</Link>
           </nav>
         </div>
 
@@ -153,7 +237,64 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Nav Menu */}
+      {/* Mobile Search - Hidden by default, shown when menu is open */}
+      <div className={`md:hidden px-4 py-3 bg-gray-900 ${!mobileMenuOpen && 'hidden'}`}>
+        <form onSubmit={handleSearch} className="relative">
+          <input
+            id="mobile-search-input"
+            type="text"
+            placeholder="Search for movies, TV shows, people..."
+            className="w-full bg-gray-800 text-white px-4 py-2 pl-10 pr-4 rounded-full focus:outline-none focus:ring-2 focus:ring-cinema-gold"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 animate-spin" />
+          )}
+        </form>
+        {searchResults.length > 0 && (
+          <div className="mt-2 bg-gray-800 rounded-lg shadow-lg border border-gray-700 max-h-96 overflow-y-auto">
+            {searchResults.map((result) => (
+              <div
+                key={`${'title' in result ? 'movie' : 'person'}-${result.id}`}
+                className="p-3 hover:bg-gray-700 cursor-pointer flex items-center space-x-3"
+                onClick={() => handleResultClick(result)}
+              >
+                {'poster_path' in result ? (
+                  <img
+                    src={result.poster_path ? `https://image.tmdb.org/t/p/w92${result.poster_path}` : '/placeholder-movie.png'}
+                    alt={result.title}
+                    className="w-10 h-15 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-10 h-15 bg-gray-700 rounded flex items-center justify-center">
+                    <User className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium text-white">
+                    {'title' in result ? result.title : result.name}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {result.media_type === 'movie' 
+                      ? 'Movie' 
+                      : result.media_type === 'tv' 
+                        ? 'TV Show' 
+                        : 'Person'}
+                    {result.media_type !== 'person' && 
+                      'release_date' in result && 
+                      result.release_date && 
+                      ` • ${result.release_date.split('-')[0]}`}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-card border-t border-cinema-purple/20 shadow-md">
           <nav className="flex flex-col p-4 space-y-3">

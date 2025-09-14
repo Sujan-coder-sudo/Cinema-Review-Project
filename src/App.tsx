@@ -13,6 +13,7 @@ import MovieDetail from "@/pages/MovieDetail";
 import TMDBHome from "@/pages/TMDBHome";
 import TMDBMovies from "@/pages/TMDBMovies";
 import TMDBMovieDetail from "@/pages/TMDBMovieDetail";
+import PersonDetailsPage from "@/pages/PersonDetailsPage";
 import TMDBDemo from "@/components/TMDBDemo";
 import Auth from "@/pages/Auth";
 import Profile from "@/pages/Profile";
@@ -41,6 +42,7 @@ const AppRoutes = () => (
           <Route path="/" element={<TMDBHome />} />
           <Route path="/movies" element={<TMDBMovies />} />
           <Route path="/movies/:id" element={<TMDBMovieDetail />} />
+          <Route path="/person/:id" element={<PersonDetailsPage />} />
           <Route path="/demo" element={<TMDBDemo />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/register" element={<Auth />} />
