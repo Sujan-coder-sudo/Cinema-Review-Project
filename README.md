@@ -1,8 +1,4 @@
-Absolutely, Sujan — here’s your complete and polished `README.md` file, ready to drop into your GitHub repo. It’s formatted for clarity, beginner-friendliness, and professional presentation:
 
----
-
-```markdown
 # 🎬 CinemaReview - Full-Stack Movie Review Platform
 
 A modern, responsive movie discovery and review platform built with **React, TypeScript, Tailwind CSS, shadcn/ui, Node.js, Express, and MongoDB (Mongoose)**.  
