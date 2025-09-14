@@ -13,7 +13,7 @@ Easily search movies via **TMDB API**, write reviews, maintain a watchlist, and 
 
 ---
 # How to use
-[![How to Use](https://img.youtube.com/vi/cTPl8TzRjTc/0.jpg)](https://www.youtube.com/watch?v=cTPl8TzRjTc)
+[![How to Use Video ](https://www.youtube.com/watch?v=cTPl8TzRjTc)
 
 ---
 ## 📌 Table of Contents
